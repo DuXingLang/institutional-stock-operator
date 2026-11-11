@@ -2,7 +2,7 @@
   <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
   <img alt="NumPy" src="https://img.shields.io/badge/NumPy-1.24%2B-013243?logo=numpy&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
-  <img alt="Skill" src="https://img.shields.io/badge/Skill-v1.1.0-blue">
+  <img alt="Skill" src="https://img.shields.io/badge/Skill-v2.0.0-blue">
 </p>
 
 <!-- Language navigation -->
@@ -78,51 +78,37 @@
 
 ## 快速开始
 
-这是一个 Agent Skill，没有构建、打包步骤，也不需要单独配置环境。
+1. 将本目录放入 Agent 运行环境所配置的 skills 目录，确保 `SKILL.md` 可被加载；如果使用 SkillHub，可按目录 slug 安装。或者直接跟你的 Agent 说：
 
-**安装**
+   `帮我安装这个 skill：https://github.com/DuXingLang/institutional-stock-operator`
 
-把本仓库地址（或本地目录）交给 Agent，说一句「安装这个 skill」即可。手动安装也只有两步：把整个目录放进 Agent 的 skills 目录（DeepSeek Harness 为 `~/.dsh/skills/`），确认 `SKILL.md` 位于该目录根下、目录名与 frontmatter 的 `name` 一致。
+2. 在对话中直接提出分析请求，例如「用主力视角分析 600000.SH，判断现在是吸筹还是出货」或「这只票现在能不能买」。
 
-安装完就能用：技能自带示例数据，运行时只依赖 NumPy（Agent 环境缺少时执行 `python -m pip install -r requirements.txt`）。
+3. 可选输入：你的真实持仓成本与仓位、观察周期、风险偏好、重点关注的价格位，以及资金流、筹码、板块等补充数据。如果你提供真实持仓，上层 Agent 会把它作为独立约束核算，不会混入模拟中的假设仓位；缺少补充数据时，技能只用日 K 量价，并在 `warnings` 中标注缺口。
 
-**使用**
+示例请求：
 
-用自然语言给出标的和问题，Agent 会自行调用本技能。常用示例指令：
+```text
+用主力视角分析 600000.SH：
+判断当前处于吸筹、洗盘还是出货阶段，
+给出未来 5 个交易日的上涨概率与亏损概率参考。
+假设我已持有 30% 仓位，成本区间 10.2–10.8 元。
+```
 
-| 场景 | 示例指令 |
-|---|---|
-| 主力行为判断 | 用 institutional-stock-operator 分析 600000.SH，最近是主力吸筹还是出货？ |
-| 交易决策 | 600000.SH 现在能不能买？给我未来 5 个交易日的上涨概率和回撤风险 |
-| 情景推演 | 假设主力明天继续拉升，做一下未来 5 个交易日的情景模拟 |
-| 形态回测 | 回测当前形态，历史上相似走势之后 1/3/5/10 日的表现如何？ |
-| 复盘报告 | 按技能的报告结构，整理一份 600000.SH 的交易复盘 |
+**元数据与技能发现**：`SKILL.md` 顶部已内置 YAML frontmatter，包含 `name`、`description`、`version`、`license`、`compatibility`、`triggers` 与 `metadata` 字段。`description` 同时写明能力边界与适用场景，`triggers` 覆盖「主力在吸筹还是出货」「现在能不能买」「做个情景模拟」等中文说法与英文说法，便于 Agent 在扫描技能列表时完成匹配。若你的运行时只读取特定字段（例如仅 `name` 与 `description`），其余字段可安全忽略。
 
-也可以只点名其中一个引擎，例如「只做行为识别，不用情景模拟」。
+**数据前提**：本 Skill 不自带行情源，需要你提供日 K 数据——直接粘贴 JSON、给出文件路径，或先用仓库自带的 `sample_market_data.json`（180 根模拟日 K）试跑；行为识别建议 ≥80 根，回测建议 ≥500 根，字段见[输入数据](#输入数据)。数据请自行截断到决策时点，脚本不会按 `as_of` 截断。
 
-**数据怎么给**
-
-技能不联网抓行情，需要你提供日 K 数据，以下方式任选一种：
-
-- 直接粘贴 JSON（字段见[输入数据](#输入数据)）；
-- 给出本地文件路径，例如 `data/stock.json`；
-- 说明先用仓库自带的 `sample_market_data.json`（180 根模拟日 K）试跑。
-
-行为识别建议至少 80 根日 K，回测建议 500 根以上。数据请自行截断到决策时点——脚本不会按 `as_of` 截断 K 线。
-
-**进阶：直接运行脚本**
-
-需要自己跑或接入其他流程时，三个脚本就是全部入口：
+**直接运行脚本（可选）**：三个脚本就是全部入口，`--input` 必填，省略 `--output` 时结果打印到标准输出，`results/` 会自动创建。
 
 ```bash
 python -m pip install -r requirements.txt
-
 python scripts/detect_institutional_behavior.py --input sample_market_data.json --output results/behavior.json --pretty
 python scripts/simulate_institutional_scenarios.py --input sample_market_data.json --behavior results/behavior.json --output results/scenarios.json --pretty
 python scripts/backtest_similar_patterns.py --input sample_market_data.json --output results/backtest.json --pretty
 ```
 
-`--input` 必填，省略 `--output` 时结果打印到标准输出，`results/` 会自动创建。全部参数见 `--help`，引擎细节见[三个分析引擎](#三个分析引擎)。
+全部参数见 `--help`，引擎细节见[三个分析引擎](#三个分析引擎)。
 
 ## 工作流程
 
@@ -590,51 +576,37 @@ The upstream Agent combines the three outputs into a report covering base, bulli
 
 ## Quick start
 
-This is an Agent Skill: there is nothing to build or package, and no environment to configure.
+1. Place this directory in the skills directory configured for the agent runtime so that `SKILL.md` can be loaded. If you use SkillHub, install it by directory slug. Or just tell your agent:
 
-**Install**
+   `Install this skill: https://github.com/DuXingLang/institutional-stock-operator`
 
-Hand your Agent the repository URL (or a local path) and say "install this skill". Manual installation takes two steps: copy the whole directory into your Agent's skills directory (`~/.dsh/skills/` for DeepSeek Harness), and make sure `SKILL.md` sits at its root and the directory name matches the `name` in the frontmatter.
+2. Ask for an analysis directly, for example “Analyze 600000.SH from the operator's perspective and tell me whether this is accumulation or distribution” or “Can I buy this stock now?”
 
-That is all: the skill ships with sample data, and its only runtime dependency is NumPy (`python -m pip install -r requirements.txt` if the Agent environment lacks it).
+3. Optional inputs: your real cost basis and position size, holding horizon, risk preference, key price levels, plus fund-flow, chip and sector context. If you provide a real position, the upstream agent treats it as a separate constraint rather than mixing it into the simulated position; without the optional data the skill works from daily bars alone and flags the gaps in `warnings`.
 
-**Use**
+Example request:
 
-State the symbol and the question in natural language; the Agent picks the skill and runs it. Typical prompts:
+```text
+Analyze 600000.SH from the operator's perspective:
+tell me whether this is accumulation, shakeout or distribution,
+and give the 5-day upside and loss probabilities.
+Assume I hold a 30% position with a cost range of 10.2–10.8.
+```
 
-| Goal | Example prompt |
-|---|---|
-| Read institutional behavior | Use institutional-stock-operator to analyze 600000.SH — is this accumulation or distribution? |
-| Make a trading decision | Can I buy 600000.SH now? Give me the 5-day upside probability and drawdown risk. |
-| Run scenarios | Assume the main force keeps marking it up tomorrow; simulate the next 5 sessions. |
-| Backtest a pattern | Backtest the current pattern — how did similar setups perform over the next 1/3/5/10 days? |
-| Write a review | Write a 600000.SH trading review using the skill's report structure. |
+**Metadata and skill discovery**: `SKILL.md` starts with YAML frontmatter declaring `name`, `description`, `version`, `license`, `compatibility`, `triggers`, and `metadata`. The description states both the capability boundary and the situations it applies to, and `triggers` covers Chinese and English phrasings such as 「主力在吸筹还是出货」, 「现在能不能买」 and “is the operator accumulating or distributing”, so an agent scanning the skill list can match the request. Runtimes that read only specific fields—typically `name` and `description`—can safely ignore the rest.
 
-You can also name one engine only, for example "detection only, skip the scenario simulation".
+**Data prerequisite**: the skill does not bundle a market-data source. Supply daily bars by pasting JSON, giving a file path, or trying the bundled `sample_market_data.json` (180 simulated daily bars); ≥80 bars for detection, ≥500 for backtesting, fields in [Input data](#input-data). Truncate the data to your decision time yourself — the scripts do not cut bars at `as_of`.
 
-**Providing the data**
-
-The skill does not fetch quotes. Supply daily bars in any of these ways:
-
-- Paste the JSON directly (fields in [Input data](#input-data));
-- Give a local file path such as `data/stock.json`;
-- Or say you want to try the bundled `sample_market_data.json` (180 simulated daily bars) first.
-
-Detection wants at least 80 daily bars; backtesting wants 500 or more. Truncate the data to your decision time yourself — the scripts do not cut bars at `as_of`.
-
-**Advanced: run the scripts directly**
-
-To run them yourself or wire them into a pipeline, the three scripts are the whole entry point:
+**Running the scripts directly (optional)**: the three scripts are the whole entry point. `--input` is required, omitting `--output` prints to standard output, and `results/` is created automatically.
 
 ```bash
 python -m pip install -r requirements.txt
-
 python scripts/detect_institutional_behavior.py --input sample_market_data.json --output results/behavior.json --pretty
 python scripts/simulate_institutional_scenarios.py --input sample_market_data.json --behavior results/behavior.json --output results/scenarios.json --pretty
 python scripts/backtest_similar_patterns.py --input sample_market_data.json --output results/backtest.json --pretty
 ```
 
-`--input` is required, omitting `--output` prints to standard output, and `results/` is created automatically. See `--help` for every flag and [The three engines](#the-three-engines) for engine details.
+See `--help` for every flag and [The three engines](#the-three-engines) for engine details.
 
 ## How it works
 
