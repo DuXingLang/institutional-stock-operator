@@ -1,0 +1,69 @@
+{
+  "bottom_accumulation": {
+    "low_volatility": 0.18,
+    "range_bound": 0.2,
+    "volume_dryup": 0.18,
+    "turnover_stable": 0.12,
+    "support_holding": 0.18,
+    "rsi_recovery": 0.14
+  },
+  "range_accumulation": {
+    "range_bound": 0.22,
+    "volume_dryup": 0.16,
+    "up_day_volume": 0.18,
+    "support_holding": 0.18,
+    "ma20_flat": 0.12,
+    "turnover_stable": 0.14
+  },
+  "test_breakout": {
+    "near_resistance": 0.22,
+    "volume_expansion": 0.22,
+    "strong_close": 0.18,
+    "positive_return": 0.14,
+    "sector_strength": 0.12,
+    "rsi_strength": 0.12
+  },
+  "shakeout": {
+    "intraday_recovery": 0.2,
+    "support_holding": 0.2,
+    "volume_spike": 0.15,
+    "prior_uptrend": 0.18,
+    "close_strong": 0.17,
+    "rsi_reset": 0.1
+  },
+  "breakout_start": {
+    "breakout": 0.25,
+    "volume_expansion": 0.22,
+    "strong_close": 0.16,
+    "ma_alignment": 0.15,
+    "sector_strength": 0.12,
+    "capital_inflow": 0.1
+  },
+  "main_uptrend": {
+    "ma_alignment": 0.25,
+    "positive_momentum": 0.22,
+    "higher_highs": 0.18,
+    "volume_confirmation": 0.15,
+    "sector_strength": 0.1,
+    "rsi_strength": 0.1
+  },
+  "high_level_turnover": {
+    "high_range_position": 0.2,
+    "high_volume": 0.2,
+    "wide_range": 0.15,
+    "weak_close": 0.2,
+    "turnover_spike": 0.15,
+    "momentum_fade": 0.1
+  },
+  "distribution": {
+    "weak_close": 0.22,
+    "volume_spike": 0.18,
+    "negative_momentum": 0.18,
+    "failed_breakout": 0.16,
+    "turnover_spike": 0.14,
+    "sector_weakness": 0.12
+  },
+  "neutral": {
+    "default": 1.0
+  }
+}

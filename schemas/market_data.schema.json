@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Institutional Stock Operator Market Data",
+  "type": "object",
+  "required": [
+    "symbol",
+    "daily_bars"
+  ],
+  "properties": {
+    "symbol": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "as_of": {
+      "type": "string"
+    },
+    "daily_bars": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "date",
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "open": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "high": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "low": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "close": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "volume": {
+            "type": "number",
+            "minimum": 0
+          },
+          "amount": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "turnover_rate": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "intraday_bars": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "market_context": {
+      "type": "object"
+    },
+    "sector": {
+      "type": "object"
+    },
+    "capital_flow": {
+      "type": "object"
+    },
+    "chip": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}

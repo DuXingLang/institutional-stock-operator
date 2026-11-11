@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Engine Output Envelope",
+  "type": "object",
+  "required": [
+    "symbol",
+    "as_of",
+    "generated_at",
+    "algorithm_version",
+    "warnings"
+  ],
+  "properties": {
+    "symbol": {
+      "type": "string"
+    },
+    "as_of": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "algorithm_version": {
+      "type": "string"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
