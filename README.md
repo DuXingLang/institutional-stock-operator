@@ -6,6 +6,7 @@
 </p>
 
 <!-- Language navigation -->
+
 <p align="center">
   <a href="#中文">中文</a> | <a href="#english">English</a>
 </p>
@@ -66,151 +67,62 @@
 
 ## 核心能力
 
-| 能力 | 说明 | 主要输出 |
-|---|---|---|
-| 数据校验与标准化 | 校验 JSON、按日期排序、补默认值 | 统一格式的行情数据 |
-| 指标与特征工程 | SMA、EMA、ATR、RSI、滚动 z-score 等 | 14 维形态特征 |
-| 主力行为识别 | 9 个行为标签的透明规则评分 | 主导假设、分数、信号、证据、警告 |
-| 操盘情景模拟 | 3 种市场环境 × 5 类假设策略，默认每组 10,000 条路径 | 收益分布、亏损概率、风险收益参考 |
-| 历史相似走势回测 | 历史候选标准化后计算相似度，默认保留 30 个样本 | 1/3/5/10 日收益、MFE/MAE、正收益率 |
-| 结构化输出 | 统一信封字段与 `warnings`，便于上层 Agent 消费 | JSON 结果文件 |
+| 能力             | 说明                                                | 主要输出                           |
+| ---------------- | --------------------------------------------------- | ---------------------------------- |
+| 数据校验与标准化 | 校验 JSON、按日期排序、补默认值                     | 统一格式的行情数据                 |
+| 指标与特征工程   | SMA、EMA、ATR、RSI、滚动 z-score 等                 | 14 维形态特征                      |
+| 主力行为识别     | 9 个行为标签的透明规则评分                          | 主导假设、分数、信号、证据、警告   |
+| 操盘情景模拟     | 3 种市场环境 × 5 类假设策略，默认每组 10,000 条路径 | 收益分布、亏损概率、风险收益参考   |
+| 历史相似走势回测 | 历史候选标准化后计算相似度，默认保留 30 个样本      | 1/3/5/10 日收益、MFE/MAE、正收益率 |
+| 结构化输出       | 统一信封字段与 `warnings`，便于上层 Agent 消费      | JSON 结果文件                      |
 
 ## 快速开始
 
-从零到第一次跑出结果分八步：获取代码 → 检查环境 → 安装依赖 → 验证安装 → 跑通示例 → 换成自己的数据 → 选常用命令 → 查参数表。
+这是一个 Agent Skill，没有构建、打包步骤，也不需要单独配置环境。
 
-### 1. 获取代码
+**安装**
 
-```bash
-git clone <仓库地址> institutional-stock-operator
-cd institutional-stock-operator
-```
+把本仓库地址（或本地目录）交给 Agent，说一句「安装这个 skill」即可。手动安装也只有两步：把整个目录放进 Agent 的 skills 目录（DeepSeek Harness 为 `~/.dsh/skills/`），确认 `SKILL.md` 位于该目录根下、目录名与 frontmatter 的 `name` 一致。
 
-没有 git 时直接下载仓库压缩包，解压后进入该目录即可。后续命令都在项目根目录执行：`--input`、`--output` 的相对路径以当前目录为基准，脚本内部会把项目根目录加入 `sys.path`，因此不需要 `pip install` 本项目。
+安装完就能用：技能自带示例数据，运行时只依赖 NumPy（Agent 环境缺少时执行 `python -m pip install -r requirements.txt`）。
 
-### 2. 检查环境
+**使用**
 
-```bash
-python --version     # Windows
-python3 --version    # macOS / Linux
-```
+用自然语言给出标的和问题，Agent 会自行调用本技能。常用示例指令：
 
-需要 Python 3.10 或更高版本（本项目在 3.11 上开发与验证）。运行时只用到标准库与 NumPy，脚本自身不发起网络请求。
-
-### 3. 安装依赖
-
-唯一的第三方依赖是 NumPy（`>=1.24,<3.0`），建议装在虚拟环境里。
-
-macOS / Linux：
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Windows PowerShell：
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-也可以跳过虚拟环境，直接在当前环境安装（conda 环境同理）：`python -m pip install -r requirements.txt`。仓库没有 `setup.py`/`pyproject.toml`，不需要也不应该执行 `pip install .`。
-
-> 若 PowerShell 因执行策略拒绝运行激活脚本，可先执行 `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`，或者不激活、直接用 `.\.venv\Scripts\python.exe` 调用脚本。
-
-### 4. 验证安装
-
-```bash
-python -c "import numpy; print('numpy', numpy.__version__)"
-python scripts/detect_institutional_behavior.py --help
-```
-
-第一条应打印 NumPy 版本号，第二条应打印参数列表并以退出码 0 结束。若报 `ModuleNotFoundError: No module named 'numpy'`，说明依赖装进了另一个解释器：用 `python -m pip -V` 核对 `pip` 关联的 Python 是否就是当前 `python`。
-
-### 5. 跑通示例
-
-项目自带 `sample_market_data.json`（180 根模拟日 K），仅用于验证流程，不可作为真实行情或投资依据。
-
-```bash
-# 1. 主力行为识别
-python scripts/detect_institutional_behavior.py \
-  --input sample_market_data.json \
-  --output results/behavior.json --pretty
-
-# 2. 操盘情景模拟（把行为识别结果作为上下文传入）
-python scripts/simulate_institutional_scenarios.py \
-  --input sample_market_data.json \
-  --behavior results/behavior.json \
-  --output results/scenarios.json --pretty
-
-# 3. 历史相似走势回测
-python scripts/backtest_similar_patterns.py \
-  --input sample_market_data.json \
-  --output results/backtest.json --pretty
-```
-
-Windows PowerShell 的续行符是反引号，也可以把每条命令写成一行：
-
-```powershell
-python scripts/detect_institutional_behavior.py --input sample_market_data.json --output results\behavior.json --pretty
-python scripts/simulate_institutional_scenarios.py --input sample_market_data.json --behavior results\behavior.json --output results\scenarios.json --pretty
-python scripts/backtest_similar_patterns.py --input sample_market_data.json --output results\backtest.json --pretty
-```
-
-`results/` 不必提前创建，`--output` 会自动建好父目录。三条命令都应返回退出码 0，随后 `results/` 下会出现三个 JSON：
-
-| 文件 | 先看哪些字段 | 样例数据上的预期值 |
-|---|---|---|
-| `behavior.json` | `leading_hypothesis`、`scores`、`warnings` | `main_uptrend`；警告提示缺少分钟线、筹码与资金流 |
-| `scenarios.json` | `base_market_regime`、`all_scenarios`、`selected_regime_ranking` | `range`；15 组情景、其中 5 组排序 |
-| `backtest.json` | `analog_count`、`horizon_statistics`、`analogs` | 30 个相似样本，1/3/5/10 日统计齐全 |
-
-> Windows 提示：脚本内部一律以 UTF-8 读写文件，用 `--output` 落盘最稳妥；若省略 `--output` 直接打印或重定向到文件，控制台编码（如 GBK）可能让中文变乱码，此时先执行 `$env:PYTHONUTF8=1`（PowerShell）或 `export PYTHONUTF8=1`（bash）。
-
-### 6. 换成自己的数据
-
-最小的合法输入只要两根日 K，能跑通但没有分析价值：
-
-```json
-{
-  "symbol": "600000.SH",
-  "daily_bars": [
-    {"date": "2026-06-26", "open": 10.10, "high": 10.35, "low": 10.05, "close": 10.30, "volume": 1180000, "amount": 12130000, "turnover_rate": 1.15},
-    {"date": "2026-06-29", "open": 10.30, "high": 10.52, "low": 10.22, "close": 10.48, "volume": 1440000, "amount": 15070000, "turnover_rate": 1.38}
-  ]
-}
-```
-
-保存为 `data/stock.json`，把上面命令里的 `--input` 换成该路径即可。实际使用时注意：
-
-- 行为识别建议至少 80 根日 K；回测建议 500 根以上，少于 `max(60, min_history) + 最长前视 + 1`（默认 131 根）时会提示样本不足。
-- 数据必须自行截断到决策时点——脚本不会按 `as_of` 截断 K 线。
-- 各字段含义、可选块（`market_context`、`sector`、`capital_flow`、`chip`）与校验规则见[输入数据](#输入数据)，结构也可用 `schemas/market_data.schema.json` 自检。
-
-### 7. 常用命令速查
-
-| 场景 | 命令 |
+| 场景 | 示例指令 |
 |---|---|
-| 只看结果、不落盘 | `python scripts/detect_institutional_behavior.py --input data/stock.json` |
-| 使用自定义权重 | `python scripts/detect_institutional_behavior.py --input data/stock.json --weights config/behavior_weights.json --pretty` |
-| 指定情景参数 | `python scripts/simulate_institutional_scenarios.py --input data/stock.json --config config/scenario_config.json --output results/scenarios.json` |
-| 指定回测参数 | `python scripts/backtest_similar_patterns.py --input data/stock.json --config config/backtest_config.json --pretty` |
-| 查看全部参数 | `python scripts/backtest_similar_patterns.py --help` |
+| 主力行为判断 | 用 institutional-stock-operator 分析 600000.SH，最近是主力吸筹还是出货？ |
+| 交易决策 | 600000.SH 现在能不能买？给我未来 5 个交易日的上涨概率和回撤风险 |
+| 情景推演 | 假设主力明天继续拉升，做一下未来 5 个交易日的情景模拟 |
+| 形态回测 | 回测当前形态，历史上相似走势之后 1/3/5/10 日的表现如何？ |
+| 复盘报告 | 按技能的报告结构，整理一份 600000.SH 的交易复盘 |
 
-### 8. 命令行参数
+也可以只点名其中一个引擎，例如「只做行为识别，不用情景模拟」。
 
-| 脚本 | 必填参数 | 可选参数 |
-|---|---|---|
-| `detect_institutional_behavior.py` | `--input` | `--output`、`--weights`、`--pretty` |
-| `simulate_institutional_scenarios.py` | `--input` | `--behavior`、`--config`、`--output`、`--pretty` |
-| `backtest_similar_patterns.py` | `--input` | `--config`、`--output`、`--pretty` |
+**数据怎么给**
 
-省略 `--output` 时结果打印到标准输出；`--pretty` 仅控制 JSON 是否缩进。`--behavior` 接收行为检测脚本输出的 JSON 文件路径。配置不会被自动加载，需要用 `--weights`/`--config` 显式指定。输入校验失败或运行出错时，脚本抛出明确错误并以非零退出码结束（例如缺少 `daily_bars`、日期非 ISO、配置项类型错误）。
+技能不联网抓行情，需要你提供日 K 数据，以下方式任选一种：
+
+- 直接粘贴 JSON（字段见[输入数据](#输入数据)）；
+- 给出本地文件路径，例如 `data/stock.json`；
+- 说明先用仓库自带的 `sample_market_data.json`（180 根模拟日 K）试跑。
+
+行为识别建议至少 80 根日 K，回测建议 500 根以上。数据请自行截断到决策时点——脚本不会按 `as_of` 截断 K 线。
+
+**进阶：直接运行脚本**
+
+需要自己跑或接入其他流程时，三个脚本就是全部入口：
+
+```bash
+python -m pip install -r requirements.txt
+
+python scripts/detect_institutional_behavior.py --input sample_market_data.json --output results/behavior.json --pretty
+python scripts/simulate_institutional_scenarios.py --input sample_market_data.json --behavior results/behavior.json --output results/scenarios.json --pretty
+python scripts/backtest_similar_patterns.py --input sample_market_data.json --output results/backtest.json --pretty
+```
+
+`--input` 必填，省略 `--output` 时结果打印到标准输出，`results/` 会自动创建。全部参数见 `--help`，引擎细节见[三个分析引擎](#三个分析引擎)。
 
 ## 工作流程
 
@@ -281,30 +193,30 @@ python scripts/backtest_similar_patterns.py --input sample_market_data.json --ou
 
 **顶层字段**
 
-| 字段 | 必填 | 说明 |
-|---|---|---|
-| `symbol` | 是 | 非空字符串，建议带交易所后缀，如 `600000.SH` |
-| `daily_bars` | 是 | 历史日 K 线，至少 2 根；脚本会按日期升序重新排序 |
-| `as_of` | 否 | 数据截至时间，ISO 日期或日期时间；省略时取最后一根 K 线的日期。仅作元数据记录，脚本不会据此截断 K 线 |
-| `name` | 否 | 股票名称，非空字符串 |
-| `intraday_bars` | 否 | 分钟 K 线数组；三个脚本均不强制，缺失时行为引擎会给出警告 |
-| `market_context` | 否 | 大盘环境（对象）；`market_regime` 支持 `bullish`、`range`、`bearish` 及常见别名 |
-| `sector` | 否 | 板块对象，如名称与当日收益（`return_1d`） |
-| `capital_flow` | 否 | 资金流对象，如 `net_inflow` |
-| `chip` | 否 | 筹码分布对象，如 `average_cost`、`profit_ratio`、`concentration_90` |
-| `metadata` | 否 | 其他数据源或数据质量信息（对象） |
+| 字段             | 必填 | 说明                                                                                                 |
+| ---------------- | ---- | ---------------------------------------------------------------------------------------------------- |
+| `symbol`         | 是   | 非空字符串，建议带交易所后缀，如 `600000.SH`                                                         |
+| `daily_bars`     | 是   | 历史日 K 线，至少 2 根；脚本会按日期升序重新排序                                                     |
+| `as_of`          | 否   | 数据截至时间，ISO 日期或日期时间；省略时取最后一根 K 线的日期。仅作元数据记录，脚本不会据此截断 K 线 |
+| `name`           | 否   | 股票名称，非空字符串                                                                                 |
+| `intraday_bars`  | 否   | 分钟 K 线数组；三个脚本均不强制，缺失时行为引擎会给出警告                                            |
+| `market_context` | 否   | 大盘环境（对象）；`market_regime` 支持 `bullish`、`range`、`bearish` 及常见别名                      |
+| `sector`         | 否   | 板块对象，如名称与当日收益（`return_1d`）                                                            |
+| `capital_flow`   | 否   | 资金流对象，如 `net_inflow`                                                                          |
+| `chip`           | 否   | 筹码分布对象，如 `average_cost`、`profit_ratio`、`concentration_90`                                  |
+| `metadata`       | 否   | 其他数据源或数据质量信息（对象）                                                                     |
 
 `market_regime` 的常见别名会被映射：`bull`、`strong`、`普涨` 视为 `bullish`；`bear`、`weak`、`普跌` 视为 `bearish`；`震荡`、`大跌修复` 视为 `range`；无法识别的取值按 `range` 处理。
 
 **日 K 线字段**
 
-| 字段 | 必填 | 约束 |
-|---|---|---|
-| `date` | 是 | `YYYY-MM-DD` 形式的 ISO 日期字符串；非 ISO 或重复日期会被拒绝 |
-| `open`、`high`、`low`、`close` | 是 | 数值且大于 0；最高价/最低价必须与开盘价、收盘价自洽 |
-| `volume` | 是 | 数值且不小于 0 |
-| `amount` | 否 | 数值或 `null` |
-| `turnover_rate` | 否 | 数值或 `null`；使用百分数数值 |
+| 字段                           | 必填 | 约束                                                          |
+| ------------------------------ | ---- | ------------------------------------------------------------- |
+| `date`                         | 是   | `YYYY-MM-DD` 形式的 ISO 日期字符串；非 ISO 或重复日期会被拒绝 |
+| `open`、`high`、`low`、`close` | 是   | 数值且大于 0；最高价/最低价必须与开盘价、收盘价自洽           |
+| `volume`                       | 是   | 数值且不小于 0                                                |
+| `amount`                       | 否   | 数值或 `null`                                                 |
+| `turnover_rate`                | 否   | 数值或 `null`；使用百分数数值                                 |
 
 **数据约定**
 
@@ -320,14 +232,14 @@ python scripts/backtest_similar_patterns.py --input sample_market_data.json --ou
 
 三个脚本都输出一个统一信封，并在其中附带各自的分析结果：
 
-| 字段 | 说明 |
-|---|---|
-| `symbol` | 股票代码 |
-| `name` | 股票名称；输入未提供时为 `null`，其余情况在包括提前返回在内的所有结果中都会保留 |
-| `as_of` | 数据截至时间；仅作元数据，不触发 K 线截断 |
-| `generated_at` | 结果生成时间，UTC ISO 8601 |
-| `algorithm_version` | 算法版本，当前为 `1.0.0` |
-| `warnings` | 数据质量、样本量、模型假设等提示 |
+| 字段                | 说明                                                                            |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `symbol`            | 股票代码                                                                        |
+| `name`              | 股票名称；输入未提供时为 `null`，其余情况在包括提前返回在内的所有结果中都会保留 |
+| `as_of`             | 数据截至时间；仅作元数据，不触发 K 线截断                                       |
+| `generated_at`      | 结果生成时间，UTC ISO 8601                                                      |
+| `algorithm_version` | 算法版本，当前为 `1.0.0`                                                        |
+| `warnings`          | 数据质量、样本量、模型假设等提示                                                |
 
 `--output` 会写入 JSON 文件，否则输出到标准输出。各引擎的专有字段见下一节；`schemas/engine_output.schema.json` 定义五个必填信封字段（`symbol`、`as_of`、`generated_at`、`algorithm_version`、`warnings`），`name` 是可选附加字段。
 
@@ -339,17 +251,17 @@ python scripts/backtest_similar_patterns.py --input sample_market_data.json --ou
 
 根据量价关系、成交量变化、换手率、趋势结构、收盘位置及可选的板块当日收益/资金数据，对 9 个标签进行透明规则评分：
 
-| 标签 | 含义 | 典型观察 |
-|---|---|---|
-| `bottom_accumulation` | 底部吸筹特征 | 低位、缩量、波动收窄、换手稳定、守住支撑 |
-| `range_accumulation` | 区间吸筹特征 | 箱体震荡、缩量、阳线放量、20 日线走平 |
-| `test_breakout` | 试盘/测试突破特征 | 接近压力位、放量、收盘偏强、板块配合 |
-| `shakeout` | 洗盘/震仓特征 | 前期上涨后放量急跌、盘中收回、守住支撑 |
-| `breakout_start` | 启动突破特征 | 放量突破 20 日高点、均线转多、资金流入 |
-| `main_uptrend` | 主升趋势特征 | 均线多头排列、20 日动量为正、创新高、量价配合 |
-| `high_level_turnover` | 高位换手特征 | 高位、巨量、宽振幅、收盘偏弱、动量衰减 |
-| `distribution` | 派发/出货风险特征 | 收盘弱、放量、负动量、突破失败、板块走弱 |
-| `neutral` | 中性或特征不明显 | 各项信号相互抵消，或数据不足 |
+| 标签                  | 含义              | 典型观察                                      |
+| --------------------- | ----------------- | --------------------------------------------- |
+| `bottom_accumulation` | 底部吸筹特征      | 低位、缩量、波动收窄、换手稳定、守住支撑      |
+| `range_accumulation`  | 区间吸筹特征      | 箱体震荡、缩量、阳线放量、20 日线走平         |
+| `test_breakout`       | 试盘/测试突破特征 | 接近压力位、放量、收盘偏强、板块配合          |
+| `shakeout`            | 洗盘/震仓特征     | 前期上涨后放量急跌、盘中收回、守住支撑        |
+| `breakout_start`      | 启动突破特征      | 放量突破 20 日高点、均线转多、资金流入        |
+| `main_uptrend`        | 主升趋势特征      | 均线多头排列、20 日动量为正、创新高、量价配合 |
+| `high_level_turnover` | 高位换手特征      | 高位、巨量、宽振幅、收盘偏弱、动量衰减        |
+| `distribution`        | 派发/出货风险特征 | 收盘弱、放量、负动量、突破失败、板块走弱      |
+| `neutral`             | 中性或特征不明显  | 各项信号相互抵消，或数据不足                  |
 
 评分是“0–1 信号值 × 权重”的加权和再乘以 100，范围 0–100；`neutral` 取默认分与“100 − 最高非中性分”中的较大值。`leading_hypothesis` 始终等于 `scores` 中排第一的标签，因此当所有非中性分数都低于 50 时，`neutral` 可能成为领先假设。分数表示当前行情与某类规则的匹配程度，**不是该行为真实发生的概率**，更不能证明某个机构正在执行对应操作。
 
@@ -368,39 +280,39 @@ python scripts/backtest_similar_patterns.py --input sample_market_data.json --ou
 
 对 5 类假设策略与 3 种市场环境的所有组合进行模拟，共 15 组；默认每组 10,000 条路径，因此单次运行生成 150,000 条模拟收益路径。
 
-| 假设策略 | 含义 |
-|---|---|
-| `accumulation` | 吸筹 |
-| `shakeout` | 洗盘 |
-| `markup` | 拉升 |
+| 假设策略              | 含义     |
+| --------------------- | -------- |
+| `accumulation`        | 吸筹     |
+| `shakeout`            | 洗盘     |
+| `markup`              | 拉升     |
 | `high_level_turnover` | 高位换手 |
-| `distribution` | 派发 |
+| `distribution`        | 派发     |
 
-| 市场环境 | 含义 |
-|---|---|
+| 市场环境  | 含义          |
+| --------- | ------------- |
 | `bullish` | 上涨/强势环境 |
-| `range` | 震荡环境 |
+| `range`   | 震荡环境      |
 | `bearish` | 下跌/弱势环境 |
 
 模型先用最近 60 个交易日收益估计日均收益与波动率（不足 60 个时使用全部可用样本），再叠加以下**显式假设偏移**（以 ATR% 为单位）：
 
 **市场环境偏移**
 
-| 市场环境 | 收益偏移 |
-|---|---:|
+| 市场环境  | 收益偏移     |
+| --------- | ------------:|
 | `bullish` | +0.35 × ATR% |
-| `range` | 0 |
+| `range`   | 0            |
 | `bearish` | −0.45 × ATR% |
 
 **假设策略偏移**
 
-| 假设策略 | 收益偏移 |
-|---|---:|
-| `accumulation` | +0.05 × ATR% |
-| `shakeout` | −0.10 × ATR% |
-| `markup` | +0.30 × ATR% |
+| 假设策略              | 收益偏移     |
+| --------------------- | ------------:|
+| `accumulation`        | +0.05 × ATR% |
+| `shakeout`            | −0.10 × ATR% |
+| `markup`              | +0.30 × ATR% |
 | `high_level_turnover` | −0.10 × ATR% |
-| `distribution` | −0.35 × ATR% |
+| `distribution`        | −0.35 × ATR% |
 
 两组偏移相互独立并按加法叠加：情景日均收益 = 历史日均收益 + 环境偏移 + 策略偏移；波动率沿用历史估计，不随情景改变。这些偏移是硬编码的模型假设，不是实际机构操盘计划；配置文件中仅暴露路径数、持有期和随机种子三个参数（见[配置项](#配置项)）。模拟使用正态收益近似，未模拟涨跌停排队、跳空、停牌、盘口冲击、交易费用及个股流动性约束。
 
@@ -442,11 +354,11 @@ python scripts/backtest_similar_patterns.py --input sample_market_data.json --ou
 
 ## 配置项
 
-| 文件 | 作用 | 可配置项 |
-|---|---|---|
-| `config/behavior_weights.json` | 行为模式的信号权重模板 | 各标签下信号权重、`neutral` 的 `default` |
-| `config/scenario_config.json` | 情景模拟参数 | `n_paths`（默认 10,000）、`horizon_sessions`（默认 1）、`seed`（默认 17） |
-| `config/backtest_config.json` | 相似走势回测参数 | `top_k`（默认 30）、`min_history`（默认 120）、`horizons`（默认 `[1,3,5,10]`） |
+| 文件                           | 作用                   | 可配置项                                                                       |
+| ------------------------------ | ---------------------- | ------------------------------------------------------------------------------ |
+| `config/behavior_weights.json` | 行为模式的信号权重模板 | 各标签下信号权重、`neutral` 的 `default`                                       |
+| `config/scenario_config.json`  | 情景模拟参数           | `n_paths`（默认 10,000）、`horizon_sessions`（默认 1）、`seed`（默认 17）      |
+| `config/backtest_config.json`  | 相似走势回测参数       | `top_k`（默认 30）、`min_history`（默认 120）、`horizons`（默认 `[1,3,5,10]`） |
 
 **注意**：脚本不会自动读取 `config/` 下的文件，需要使用 `--weights` 或 `--config` 显式传入；不传时使用代码内置默认值。
 
@@ -490,12 +402,12 @@ python scripts/backtest_similar_patterns.py \
 
 上层 Agent 可参考以下初始权重进行综合研判；脚本本身不自动计算综合分，权重也应通过样本外验证调整：
 
-| 分析模块 | 初始权重 |
-|---|---:|
-| 主力行为识别证据 | 30% |
-| 情景模拟稳健性 | 25% |
-| 历史相似走势统计 | 30% |
-| 大盘及板块环境 | 15% |
+| 分析模块         | 初始权重 |
+| ---------------- | --------:|
+| 主力行为识别证据 | 30%      |
+| 情景模拟稳健性   | 25%      |
+| 历史相似走势统计 | 30%      |
+| 大盘及板块环境   | 15%      |
 
 综合评分不等于上涨概率。除非使用独立、足量的样本外数据完成概率校准，否则不得把综合评分直接表述为“上涨概率”。如果三个引擎结论冲突，应分析冲突来源、降低置信度，并在报告中明确说明。
 
@@ -527,13 +439,13 @@ python scripts/backtest_similar_patterns.py \
 
 ## 结果解读
 
-| 可以这样理解 | 不要这样理解 |
-|---|---|
-| “当前量价特征与主升趋势规则的匹配度最高（65/100）。” | “主力在拉升，上涨概率是 65%。” |
-| “在震荡环境、拉升假设下，模拟收益中位数为 X%。” | “未来一定会涨 X%。” |
-| “历史上 30 个相似样本之后 5 日的正收益比例为 60%。” | “这次有 60% 的概率上涨。” |
-| “缺少筹码与资金流数据，相关判断已被弱化。” | “没有这些数据也能给出确定结论。” |
-| “三个引擎结论冲突，因此降低置信度。” | “挑一个最乐观的结论作为最终判断。” |
+| 可以这样理解                                         | 不要这样理解                       |
+| ---------------------------------------------------- | ---------------------------------- |
+| “当前量价特征与主升趋势规则的匹配度最高（65/100）。” | “主力在拉升，上涨概率是 65%。”     |
+| “在震荡环境、拉升假设下，模拟收益中位数为 X%。”      | “未来一定会涨 X%。”                |
+| “历史上 30 个相似样本之后 5 日的正收益比例为 60%。”  | “这次有 60% 的概率上涨。”          |
+| “缺少筹码与资金流数据，相关判断已被弱化。”           | “没有这些数据也能给出确定结论。”   |
+| “三个引擎结论冲突，因此降低置信度。”                 | “挑一个最乐观的结论作为最终判断。” |
 
 ## 限制与风险
 
@@ -667,151 +579,62 @@ The upstream Agent combines the three outputs into a report covering base, bulli
 
 ## Key capabilities
 
-| Capability | Description | Main outputs |
-|---|---|---|
-| Data validation and normalization | Validates JSON, sorts by date, fills defaults | Standardized market data |
-| Indicators and features | SMA, EMA, ATR, RSI, rolling z-score, and more | 14-dimensional pattern features |
-| Institutional-behavior detection | Transparent rule scoring across 9 behavior labels | Leading hypothesis, scores, signals, evidence, warnings |
-| Trading-scenario simulation | 3 regimes × 5 playbooks, 10,000 paths each by default | Return distributions, loss probabilities, risk-reward proxy |
-| Historical-analog backtesting | Standardized similarity search, 30 analogs by default | 1/3/5/10-day returns, MFE/MAE, positive rate |
-| Structured output | Common envelope plus `warnings` for Agent consumption | JSON result files |
+| Capability                        | Description                                           | Main outputs                                                |
+| --------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------- |
+| Data validation and normalization | Validates JSON, sorts by date, fills defaults         | Standardized market data                                    |
+| Indicators and features           | SMA, EMA, ATR, RSI, rolling z-score, and more         | 14-dimensional pattern features                             |
+| Institutional-behavior detection  | Transparent rule scoring across 9 behavior labels     | Leading hypothesis, scores, signals, evidence, warnings     |
+| Trading-scenario simulation       | 3 regimes × 5 playbooks, 10,000 paths each by default | Return distributions, loss probabilities, risk-reward proxy |
+| Historical-analog backtesting     | Standardized similarity search, 30 analogs by default | 1/3/5/10-day returns, MFE/MAE, positive rate                |
+| Structured output                 | Common envelope plus `warnings` for Agent consumption | JSON result files                                           |
 
 ## Quick start
 
-Eight steps from zero to your first result: get the code → check the environment → install dependencies → verify the install → run the sample → switch to your own data → pick common commands → look up the flags.
+This is an Agent Skill: there is nothing to build or package, and no environment to configure.
 
-### 1. Get the code
+**Install**
 
-```bash
-git clone <repository-url> institutional-stock-operator
-cd institutional-stock-operator
-```
+Hand your Agent the repository URL (or a local path) and say "install this skill". Manual installation takes two steps: copy the whole directory into your Agent's skills directory (`~/.dsh/skills/` for DeepSeek Harness), and make sure `SKILL.md` sits at its root and the directory name matches the `name` in the frontmatter.
 
-Without git, download the repository archive, unzip it, and enter that directory. Every later command runs from the project root: relative `--input`/`--output` paths resolve against the current directory, and the scripts add the project root to `sys.path`, so you never need to `pip install` this repository.
+That is all: the skill ships with sample data, and its only runtime dependency is NumPy (`python -m pip install -r requirements.txt` if the Agent environment lacks it).
 
-### 2. Check the environment
+**Use**
 
-```bash
-python --version     # Windows
-python3 --version    # macOS / Linux
-```
+State the symbol and the question in natural language; the Agent picks the skill and runs it. Typical prompts:
 
-Python 3.10 or later is required (the project is developed and verified on 3.11). Only the standard library and NumPy are used at runtime, and the scripts make no network requests.
-
-### 3. Install dependencies
-
-NumPy (`>=1.24,<3.0`) is the only third-party dependency; a virtual environment is recommended.
-
-macOS / Linux:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Windows PowerShell:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-You can also skip the virtual environment and install into the active one (conda works the same): `python -m pip install -r requirements.txt`. The repository has no `setup.py` or `pyproject.toml`, so `pip install .` is neither needed nor supported.
-
-> If PowerShell refuses to run the activation script because of its execution policy, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first, or skip activation and call the scripts with `.\.venv\Scripts\python.exe`.
-
-### 4. Verify the installation
-
-```bash
-python -c "import numpy; print('numpy', numpy.__version__)"
-python scripts/detect_institutional_behavior.py --help
-```
-
-The first command prints the NumPy version; the second prints the argument list and exits with status 0. If you get `ModuleNotFoundError: No module named 'numpy'`, the dependency landed in a different interpreter — run `python -m pip -V` and confirm the Python tied to `pip` is the one you are invoking.
-
-### 5. Run the sample
-
-The repository includes `sample_market_data.json` (180 simulated daily bars) for workflow testing only. It is not real market data or investment advice.
-
-```bash
-# 1. Detect institutional-behavior patterns
-python scripts/detect_institutional_behavior.py \
-  --input sample_market_data.json \
-  --output results/behavior.json --pretty
-
-# 2. Simulate trading scenarios (pass the behavior output as context)
-python scripts/simulate_institutional_scenarios.py \
-  --input sample_market_data.json \
-  --behavior results/behavior.json \
-  --output results/scenarios.json --pretty
-
-# 3. Backtest similar historical patterns
-python scripts/backtest_similar_patterns.py \
-  --input sample_market_data.json \
-  --output results/backtest.json --pretty
-```
-
-In Windows PowerShell the continuation character is a backtick, or just put each command on one line:
-
-```powershell
-python scripts/detect_institutional_behavior.py --input sample_market_data.json --output results\behavior.json --pretty
-python scripts/simulate_institutional_scenarios.py --input sample_market_data.json --behavior results\behavior.json --output results\scenarios.json --pretty
-python scripts/backtest_similar_patterns.py --input sample_market_data.json --output results\backtest.json --pretty
-```
-
-`results/` does not need to exist beforehand; `--output` creates parent directories automatically. All three commands should exit with status 0 and leave three JSON files under `results/`:
-
-| File | Read these first | Expected on the sample data |
-|---|---|---|
-| `behavior.json` | `leading_hypothesis`, `scores`, `warnings` | `main_uptrend`; warnings note the missing intraday bars, chip data and capital flow |
-| `scenarios.json` | `base_market_regime`, `all_scenarios`, `selected_regime_ranking` | `range`; 15 scenarios, 5 of them ranked |
-| `backtest.json` | `analog_count`, `horizon_statistics`, `analogs` | 30 analogs with 1/3/5/10-day statistics |
-
-> Windows note: the scripts always read and write files as UTF-8, so writing with `--output` is the safe path. If you print to the console or redirect stdout instead, a non-UTF-8 console code page (for example GBK) can garble Chinese text — set `$env:PYTHONUTF8=1` in PowerShell or `export PYTHONUTF8=1` in bash first.
-
-### 6. Use your own data
-
-The smallest valid input is two daily bars — it runs, but carries no analytical value:
-
-```json
-{
-  "symbol": "600000.SH",
-  "daily_bars": [
-    {"date": "2026-06-26", "open": 10.10, "high": 10.35, "low": 10.05, "close": 10.30, "volume": 1180000, "amount": 12130000, "turnover_rate": 1.15},
-    {"date": "2026-06-29", "open": 10.30, "high": 10.52, "low": 10.22, "close": 10.48, "volume": 1440000, "amount": 15070000, "turnover_rate": 1.38}
-  ]
-}
-```
-
-Save it as `data/stock.json` and point `--input` at that file. In real use:
-
-- Detection wants at least 80 daily bars; backtesting wants 500 or more, and fewer than `max(60, min_history) + longest horizon + 1` (131 by default) triggers an insufficient-sample warning.
-- Truncate the data to your decision time yourself — the scripts do not cut bars at `as_of`.
-- Field meanings, the optional blocks (`market_context`, `sector`, `capital_flow`, `chip`) and validation rules are in [Input data](#input-data); the structure can also be checked against `schemas/market_data.schema.json`.
-
-### 7. Command cookbook
-
-| Task | Command |
+| Goal | Example prompt |
 |---|---|
-| Inspect results without writing files | `python scripts/detect_institutional_behavior.py --input data/stock.json` |
-| Use custom weights | `python scripts/detect_institutional_behavior.py --input data/stock.json --weights config/behavior_weights.json --pretty` |
-| Set simulation parameters | `python scripts/simulate_institutional_scenarios.py --input data/stock.json --config config/scenario_config.json --output results/scenarios.json` |
-| Set backtest parameters | `python scripts/backtest_similar_patterns.py --input data/stock.json --config config/backtest_config.json --pretty` |
-| List every flag | `python scripts/backtest_similar_patterns.py --help` |
+| Read institutional behavior | Use institutional-stock-operator to analyze 600000.SH — is this accumulation or distribution? |
+| Make a trading decision | Can I buy 600000.SH now? Give me the 5-day upside probability and drawdown risk. |
+| Run scenarios | Assume the main force keeps marking it up tomorrow; simulate the next 5 sessions. |
+| Backtest a pattern | Backtest the current pattern — how did similar setups perform over the next 1/3/5/10 days? |
+| Write a review | Write a 600000.SH trading review using the skill's report structure. |
 
-### 8. Command-line options
+You can also name one engine only, for example "detection only, skip the scenario simulation".
 
-| Script | Required | Optional |
-|---|---|---|
-| `detect_institutional_behavior.py` | `--input` | `--output`, `--weights`, `--pretty` |
-| `simulate_institutional_scenarios.py` | `--input` | `--behavior`, `--config`, `--output`, `--pretty` |
-| `backtest_similar_patterns.py` | `--input` | `--config`, `--output`, `--pretty` |
+**Providing the data**
 
-Without `--output`, results go to standard output; `--pretty` only controls JSON indentation. `--behavior` takes the path to the JSON file produced by the behavior-detection script. Config files are never loaded automatically — pass them with `--weights`/`--config`. Validation or runtime errors raise a clear error and exit with a non-zero status (for example a missing `daily_bars`, a non-ISO date, or a wrongly typed config option).
+The skill does not fetch quotes. Supply daily bars in any of these ways:
+
+- Paste the JSON directly (fields in [Input data](#input-data));
+- Give a local file path such as `data/stock.json`;
+- Or say you want to try the bundled `sample_market_data.json` (180 simulated daily bars) first.
+
+Detection wants at least 80 daily bars; backtesting wants 500 or more. Truncate the data to your decision time yourself — the scripts do not cut bars at `as_of`.
+
+**Advanced: run the scripts directly**
+
+To run them yourself or wire them into a pipeline, the three scripts are the whole entry point:
+
+```bash
+python -m pip install -r requirements.txt
+
+python scripts/detect_institutional_behavior.py --input sample_market_data.json --output results/behavior.json --pretty
+python scripts/simulate_institutional_scenarios.py --input sample_market_data.json --behavior results/behavior.json --output results/scenarios.json --pretty
+python scripts/backtest_similar_patterns.py --input sample_market_data.json --output results/backtest.json --pretty
+```
+
+`--input` is required, omitting `--output` prints to standard output, and `results/` is created automatically. See `--help` for every flag and [The three engines](#the-three-engines) for engine details.
 
 ## How it works
 
@@ -882,30 +705,30 @@ The scripts accept UTF-8 JSON files. Minimal example:
 
 **Top-level fields**
 
-| Field | Required | Description |
-|---|---|---|
-| `symbol` | Yes | Non-empty string; an exchange suffix is recommended, e.g. `600000.SH` |
-| `daily_bars` | Yes | Daily bars, at least 2; the loader re-sorts them by date |
-| `as_of` | No | Data cutoff as an ISO date or date-time. Defaults to the last bar date. Recorded as metadata only; the loader does not truncate bars to this timestamp |
-| `name` | No | Stock name; non-empty string |
-| `intraday_bars` | No | Intraday bar array; not required by any script, but missing data triggers a behavior warning |
-| `market_context` | No | Broad-market conditions (object); `market_regime` accepts `bullish`, `range`, `bearish`, and common aliases |
-| `sector` | No | Sector object, e.g. name and daily return (`return_1d`) |
-| `capital_flow` | No | Capital-flow object such as `net_inflow` |
-| `chip` | No | Chip-distribution object such as `average_cost`, `profit_ratio`, `concentration_90` |
-| `metadata` | No | Additional source or data-quality metadata (object) |
+| Field            | Required | Description                                                                                                                                            |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `symbol`         | Yes      | Non-empty string; an exchange suffix is recommended, e.g. `600000.SH`                                                                                  |
+| `daily_bars`     | Yes      | Daily bars, at least 2; the loader re-sorts them by date                                                                                               |
+| `as_of`          | No       | Data cutoff as an ISO date or date-time. Defaults to the last bar date. Recorded as metadata only; the loader does not truncate bars to this timestamp |
+| `name`           | No       | Stock name; non-empty string                                                                                                                           |
+| `intraday_bars`  | No       | Intraday bar array; not required by any script, but missing data triggers a behavior warning                                                           |
+| `market_context` | No       | Broad-market conditions (object); `market_regime` accepts `bullish`, `range`, `bearish`, and common aliases                                            |
+| `sector`         | No       | Sector object, e.g. name and daily return (`return_1d`)                                                                                                |
+| `capital_flow`   | No       | Capital-flow object such as `net_inflow`                                                                                                               |
+| `chip`           | No       | Chip-distribution object such as `average_cost`, `profit_ratio`, `concentration_90`                                                                    |
+| `metadata`       | No       | Additional source or data-quality metadata (object)                                                                                                    |
 
 Common `market_regime` aliases are mapped as follows: `bull`, `strong`, and `普涨` mean `bullish`; `bear`, `weak`, and `普跌` mean `bearish`; `震荡` and `大跌修复` mean `range`; unrecognized values fall back to `range`.
 
 **Daily-bar fields**
 
-| Field | Required | Constraint |
-|---|---|---|
-| `date` | Yes | ISO date string in `YYYY-MM-DD` form; non-ISO or duplicate dates are rejected |
-| `open`, `high`, `low`, `close` | Yes | Numeric and greater than 0; high/low must be consistent with open/close |
-| `volume` | Yes | Numeric and non-negative |
-| `amount` | No | Numeric or `null` |
-| `turnover_rate` | No | Numeric or `null`; percentage-point value |
+| Field                          | Required | Constraint                                                                    |
+| ------------------------------ | -------- | ----------------------------------------------------------------------------- |
+| `date`                         | Yes      | ISO date string in `YYYY-MM-DD` form; non-ISO or duplicate dates are rejected |
+| `open`, `high`, `low`, `close` | Yes      | Numeric and greater than 0; high/low must be consistent with open/close       |
+| `volume`                       | Yes      | Numeric and non-negative                                                      |
+| `amount`                       | No       | Numeric or `null`                                                             |
+| `turnover_rate`                | No       | Numeric or `null`; percentage-point value                                     |
 
 **Data conventions**
 
@@ -921,14 +744,14 @@ Common `market_regime` aliases are mapped as follows: `bull`, `strong`, and `普
 
 All three scripts emit a common envelope around their engine-specific results:
 
-| Field | Description |
-|---|---|
-| `symbol` | Ticker |
-| `name` | Stock name; `null` when the input has none, otherwise preserved in every result, including early returns |
-| `as_of` | Data cutoff timestamp; metadata only, does not truncate bars |
-| `generated_at` | Generation time in UTC ISO 8601 |
-| `algorithm_version` | Algorithm version, currently `1.0.0` |
-| `warnings` | Data-quality, sample-size, and model-assumption notices |
+| Field               | Description                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------- |
+| `symbol`            | Ticker                                                                                                   |
+| `name`              | Stock name; `null` when the input has none, otherwise preserved in every result, including early returns |
+| `as_of`             | Data cutoff timestamp; metadata only, does not truncate bars                                             |
+| `generated_at`      | Generation time in UTC ISO 8601                                                                          |
+| `algorithm_version` | Algorithm version, currently `1.0.0`                                                                     |
+| `warnings`          | Data-quality, sample-size, and model-assumption notices                                                  |
 
 `--output` writes a JSON file; otherwise the result goes to standard output. Engine-specific fields are described in the next section; `schemas/engine_output.schema.json` defines the five required envelope fields (`symbol`, `as_of`, `generated_at`, `algorithm_version`, `warnings`), and `name` is an optional extra field.
 
@@ -940,17 +763,17 @@ Script: `scripts/detect_institutional_behavior.py`
 
 The engine scores 9 labels using price-volume relationships, volume changes, turnover, trend structure, close location, and optional sector daily return/capital-flow data:
 
-| Label | Meaning | Typical observations |
-|---|---|---|
-| `bottom_accumulation` | Bottom accumulation | Low price zone, shrinking volume, narrow range, stable turnover, support holding |
-| `range_accumulation` | Range accumulation | Box range, low volume, up-day volume expansion, flat 20-day MA |
-| `test_breakout` | Breakout test | Near resistance, volume expansion, strong close, sector support |
-| `shakeout` | Shakeout | Volume spike and sharp drop after an advance, intraday recovery, support held |
-| `breakout_start` | Breakout start | Volume breakout above the 20-day high, bullish MA alignment, capital inflow |
-| `main_uptrend` | Main uptrend | Bullish MA alignment, positive 20-day momentum, higher highs, volume confirmation |
-| `high_level_turnover` | High-level turnover | High range position, heavy volume, wide range, weak close, fading momentum |
-| `distribution` | Distribution risk | Weak close, volume spike, negative momentum, failed breakout, sector weakness |
-| `neutral` | Neutral or unclear | Signals cancel out or data is insufficient |
+| Label                 | Meaning             | Typical observations                                                              |
+| --------------------- | ------------------- | --------------------------------------------------------------------------------- |
+| `bottom_accumulation` | Bottom accumulation | Low price zone, shrinking volume, narrow range, stable turnover, support holding  |
+| `range_accumulation`  | Range accumulation  | Box range, low volume, up-day volume expansion, flat 20-day MA                    |
+| `test_breakout`       | Breakout test       | Near resistance, volume expansion, strong close, sector support                   |
+| `shakeout`            | Shakeout            | Volume spike and sharp drop after an advance, intraday recovery, support held     |
+| `breakout_start`      | Breakout start      | Volume breakout above the 20-day high, bullish MA alignment, capital inflow       |
+| `main_uptrend`        | Main uptrend        | Bullish MA alignment, positive 20-day momentum, higher highs, volume confirmation |
+| `high_level_turnover` | High-level turnover | High range position, heavy volume, wide range, weak close, fading momentum        |
+| `distribution`        | Distribution risk   | Weak close, volume spike, negative momentum, failed breakout, sector weakness     |
+| `neutral`             | Neutral or unclear  | Signals cancel out or data is insufficient                                        |
 
 Scores are the weighted sum of 0–1 signal values multiplied by 100, bounded to 0–100. `neutral` is the larger of its default score and “100 minus the best non-neutral score.” `leading_hypothesis` always equals the top-ranked label in `scores`, so `neutral` can be the leading hypothesis whenever every non-neutral score stays below 50. A score measures rule similarity, **not the probability that the behavior is actually occurring**, and it cannot prove that any institution is executing a particular playbook.
 
@@ -969,39 +792,39 @@ Script: `scripts/simulate_institutional_scenarios.py`
 
 The engine simulates every combination of 5 hypothetical playbooks and 3 market regimes—15 groups in total. With the default 10,000 paths per group, one run produces 150,000 simulated return paths.
 
-| Hypothetical playbook | Meaning |
-|---|---|
-| `accumulation` | Accumulation |
-| `shakeout` | Shakeout |
-| `markup` | Markup |
+| Hypothetical playbook | Meaning             |
+| --------------------- | ------------------- |
+| `accumulation`        | Accumulation        |
+| `shakeout`            | Shakeout            |
+| `markup`              | Markup              |
 | `high_level_turnover` | High-level turnover |
-| `distribution` | Distribution |
+| `distribution`        | Distribution        |
 
-| Market regime | Meaning |
-|---|---|
-| `bullish` | Advancing/strong environment |
-| `range` | Sideways environment |
-| `bearish` | Declining/weak environment |
+| Market regime | Meaning                      |
+| ------------- | ---------------------------- |
+| `bullish`     | Advancing/strong environment |
+| `range`       | Sideways environment         |
+| `bearish`     | Declining/weak environment   |
 
 The model estimates mean return and volatility from up to the latest 60 daily returns (all available returns when there are fewer than 60), then applies the following **explicit assumption shifts** (in ATR% units):
 
 **Market-regime shifts**
 
 | Market regime | Return shift |
-|---|---:|
-| `bullish` | +0.35 × ATR% |
-| `range` | 0 |
-| `bearish` | −0.45 × ATR% |
+| ------------- | ------------:|
+| `bullish`     | +0.35 × ATR% |
+| `range`       | 0            |
+| `bearish`     | −0.45 × ATR% |
 
 **Playbook shifts**
 
 | Hypothetical playbook | Return shift |
-|---|---:|
-| `accumulation` | +0.05 × ATR% |
-| `shakeout` | −0.10 × ATR% |
-| `markup` | +0.30 × ATR% |
+| --------------------- | ------------:|
+| `accumulation`        | +0.05 × ATR% |
+| `shakeout`            | −0.10 × ATR% |
+| `markup`              | +0.30 × ATR% |
 | `high_level_turnover` | −0.10 × ATR% |
-| `distribution` | −0.35 × ATR% |
+| `distribution`        | −0.35 × ATR% |
 
 The two sets are independent and additive: scenario mean = historical mean + regime shift + playbook shift. Volatility stays at the historical estimate and is not shifted by regime or playbook. These shifts are hard-coded model assumptions, not actual institutional plans. The config file exposes only the path count, holding horizon, and random seed (see [Configuration](#configuration)). The engine uses a normal-return approximation and does not model limit-up/limit-down queues, gaps, suspensions, order-book impact, transaction costs, or stock-specific liquidity constraints.
 
@@ -1043,11 +866,11 @@ A historical candidate must sit at index ≥ `max(60, min_history)` (60 bars of 
 
 ## Configuration
 
-| File | Purpose | Configurable fields |
-|---|---|---|
-| `config/behavior_weights.json` | Signal-weight template for behavior patterns | Signal weights per label; `neutral.default` |
-| `config/scenario_config.json` | Scenario-simulation parameters | `n_paths` (default 10,000), `horizon_sessions` (default 1), `seed` (default 17) |
-| `config/backtest_config.json` | Analog-backtest parameters | `top_k` (default 30), `min_history` (default 120), `horizons` (default `[1,3,5,10]`) |
+| File                           | Purpose                                      | Configurable fields                                                                  |
+| ------------------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `config/behavior_weights.json` | Signal-weight template for behavior patterns | Signal weights per label; `neutral.default`                                          |
+| `config/scenario_config.json`  | Scenario-simulation parameters               | `n_paths` (default 10,000), `horizon_sessions` (default 1), `seed` (default 17)      |
+| `config/backtest_config.json`  | Analog-backtest parameters                   | `top_k` (default 30), `min_history` (default 120), `horizons` (default `[1,3,5,10]`) |
 
 **Note**: the scripts do not read files under `config/` automatically. Pass them explicitly with `--weights` or `--config`; otherwise built-in defaults are used.
 
@@ -1091,12 +914,12 @@ Reports must clearly distinguish four information types:
 
 An upstream Agent may use the following initial weights for its combined assessment. The scripts do not compute a composite score automatically, and the weights should be tuned through out-of-sample validation:
 
-| Module | Initial weight |
-|---|---:|
-| Behavior-detection evidence | 30% |
-| Scenario-simulation robustness | 25% |
-| Historical-analog statistics | 30% |
-| Market and sector environment | 15% |
+| Module                         | Initial weight |
+| ------------------------------ | --------------:|
+| Behavior-detection evidence    | 30%            |
+| Scenario-simulation robustness | 25%            |
+| Historical-analog statistics   | 30%            |
+| Market and sector environment  | 15%            |
 
 A composite score is not an upside probability. Unless it has been calibrated on an independent, sufficiently large out-of-sample dataset, do not present it as a “probability of rising.” If the three engines disagree, analyze the source of the conflict, lower confidence, and state the disagreement explicitly.
 
@@ -1128,13 +951,13 @@ The caller must guarantee correct timestamp boundaries in the market-data snapsh
 
 ## Reading the results
 
-| Reasonable interpretation | Incorrect interpretation |
-|---|---|
-| “Current price-volume features best match the main-uptrend rules (65/100).” | “Institutions are marking it up; the probability of rising is 65%.” |
-| “Under the range regime and markup assumption, the simulated median return is X%.” | “It will definitely rise X%.” |
-| “60% of 30 similar historical analogs had positive 5-day forward returns.” | “There is a 60% chance it rises this time.” |
-| “Chip and capital-flow data are missing, so related signals are weakened.” | “A definitive conclusion is possible without that data.” |
-| “The engines disagree, so confidence is reduced.” | “Pick the most optimistic conclusion as the final call.” |
+| Reasonable interpretation                                                          | Incorrect interpretation                                            |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| “Current price-volume features best match the main-uptrend rules (65/100).”        | “Institutions are marking it up; the probability of rising is 65%.” |
+| “Under the range regime and markup assumption, the simulated median return is X%.” | “It will definitely rise X%.”                                       |
+| “60% of 30 similar historical analogs had positive 5-day forward returns.”         | “There is a 60% chance it rises this time.”                         |
+| “Chip and capital-flow data are missing, so related signals are weakened.”         | “A definitive conclusion is possible without that data.”            |
+| “The engines disagree, so confidence is reduced.”                                  | “Pick the most optimistic conclusion as the final call.”            |
 
 ## Limitations and risks
 

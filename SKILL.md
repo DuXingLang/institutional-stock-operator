@@ -4,7 +4,7 @@ description: |
   分析单只A股个股的主力行为，给出T+1交易研判：依次调用三个本地脚本完成主力行为识别（9 类量价模式）、操盘情景模拟（5 种假设策略 × 3 种市场环境）、历史相似走势回测，输出带证据、分歧与失效条件的研判报告。
   当用户点名某只A股个股，询问主力/机构在做什么、该不该买/持有/减仓，要求一份交易研判或复盘报告，或希望做情景模拟、历史相似走势回测时使用。
 
-  Use when the user names an A-share stock and asks what 主力/机构 is doing, whether to buy, hold or reduce, or wants 交易研判/复盘/情景模拟/相似走势回测 — e.g. 「分析一下 600000.SH」「主力在吸筹还是出货」「现在能不能买」「做个情景模拟」「从主力的角度分析一下这只股票」「预测一下这只股票」. Also use when asked to run institutional-behavior detection, Monte-Carlo scenario simulation, or historical analog backtesting on OHLCV daily bars.
+  Use when the user names an A-share stock and asks what 主力/机构 is doing, whether to buy, hold or reduce, or wants 交易研判/复盘/情景模拟/相似走势回测 — e.g. 「分析一下 600000.SH」「主力在吸筹还是出货」「现在能不能买」「做个情景模拟交易决策」「从主力的角度分析一下这只股票」「预测一下这只股票」. Also use when asked to run institutional-behavior detection, Monte-Carlo scenario simulation, or historical analog backtesting on OHLCV daily bars.
 
   Scope: single stock on 沪深主板与创业板（不含科创板与 ST）。Requires a supplied daily-bar JSON (≥80 bars for detection, ~500 for backtesting); does not fetch quotes, scan or rank the market, or place orders — pair it with a market-data MCP/Skill upstream. Output is a research aid, not investment advice.
 license: MIT

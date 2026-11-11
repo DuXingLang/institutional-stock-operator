@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# 运行产物 / runtime output
+results/
+*.tmp.json
+
+# 临时目录 / scratch
+.tmp_*/
